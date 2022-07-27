@@ -32,11 +32,11 @@ class LaravelModuleInstaller extends LibraryInstaller
 
         $extra = $this->composer->getPackage()->getExtra();
 
-        if (!$extra || empty($extra['module-dir'])) {
-            return self::DEFAULT_ROOT;
+        if ($dir = ($extra['module-dir'] ?? false)) {
+            return $dir;
         }
 
-        return $extra['module-dir'];
+        return self::DEFAULT_ROOT;
     }
 
     /**
@@ -51,10 +51,13 @@ class LaravelModuleInstaller extends LibraryInstaller
     protected function getModuleName(PackageInterface $package)
     {
         $extra = $package->getExtra();
+        if ($dir = ($extra['module-dir-name'] ?? false)) {
+            return $dir;
+        }
         if ($extra && isset($extra['module-name'])) {
             return ucfirst($extra['module-name']);
         }
-        
+
         $name = $package->getPrettyName();
         $split = explode("/", $name);
 
