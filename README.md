@@ -2,6 +2,8 @@
 
 The purpose of this package is to allow for easy installation of standalone Modules into the [Laravel Modules](https://github.com/nWidart/laravel-modules) package. This package will ensure that your module is installed into the `Modules/` directory instead of `vendor/`.
 
+**This a refactored version of `joshbrw/laravel-module-installer`. It incorporates most of the PR's open since 2021.**
+
 ## Installation
 
 1. Ensure you have the `type` set to `laravel-module` in your module's `composer.json`
@@ -21,7 +23,7 @@ All options go into `extra` of the application `composer.json`
 
 #### `extra.module-dir`
 
-To change the default `Modules` directory where modules are installed, set the `module-dir` in `extra` of the applications `composer.json`.
+To change the default `Modules` directory where the modules are installed, set the `module-dir` in `extra` of the applications `composer.json`.
 
 ```json
 {
@@ -72,7 +74,7 @@ Given `vendor/some-module` will result in a module directory path called `Module
 
 #### `extra.include-module-part`
 
-If package ends with a `-module`, this will be removed by default. If the `-module` should be part of module directory path, 
+If a package name ends with `-module`, this will be removed by default. If `-module` should be part of the module directory path, 
 set `include-module-part` to `true` to incorporate it into its path.
 
 ```json
