@@ -85,5 +85,11 @@ set `include-module-part` to `true` to incorporate it into its path.
 
 Given `vendor/some-module` results in a module directory path called `Modules/SomeModule`
 
+## Tests
+
+```bash
+composer test
+```
+
 ## Notes
 * When working on a module that is version controlled within an app that is also version controlled, you have to commit and push from inside the Module directory and then `composer update` within the app itself to ensure that the latest version of your module (dependant upon constraint) is specified in your composer.lock file.
