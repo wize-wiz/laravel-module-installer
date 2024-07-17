@@ -2,20 +2,6 @@
 
 The purpose of this package is to allow for easy installation of standalone Modules into the [Laravel Modules](https://github.com/nWidart/laravel-modules) package. This package will ensure that your module is installed into the `Modules/` directory instead of `vendor/`.
 
-You can specify an alternate directory by including a `module-dir` in the extra data in your app `composer.json` file:
-
-    "extra": {
-        "module-dir": "Custom"
-    }
-
-You can also specify the exact module name in the package `composer.json` before its publication:
-
-    "extra": {
-        "module-name": "blog"
-    }
-
-Here the example target directory is `Modules/Blog` (`ucfirst` for the `module-name` applied).  
-
 ## Installation
 
 1. Ensure you have the `type` set to `laravel-module` in your module's `composer.json`
@@ -25,13 +11,13 @@ Here the example target directory is `Modules/Blog` (`ucfirst` for the `module-n
 
 ## Options
 
-### App `composer.json`
+### Application `composer.json`
 
-All options go into `extra`
+All options go into `extra` of the application `composer.json`
 
-| option     |                                                                        |
-|------------|------------------------------------------------------------------------|
-| module-dir | Sets the directory name where modules are installed, default `Modules` |
+| option       | type   | default   |                                                     |
+|--------------|--------|-----------|-----------------------------------------------------|
+| `module-dir` | string | `Modules` | Sets the directory name where modules are installed |
 
 #### `extra.module-dir`
 
@@ -40,9 +26,6 @@ To change the default `Modules` directory where modules are installed, set the `
 ```json
 {
   "extra": {
-    "laravel": {
-      "dont-discover": []
-    },
     "module-dir": "Custom"
   }
 }
@@ -50,7 +33,7 @@ To change the default `Modules` directory where modules are installed, set the `
 
 ### Package `composer.json` 
 
-All options go into `extra`
+All options go into `extra` of the package `composer.json`
 
 | option                     | type     | default |                                                                                    |
 |----------------------------|----------|---------|------------------------------------------------------------------------------------|
@@ -71,11 +54,11 @@ change this default behaviour, set the `extra.module-name` to any custom name.
 }
 ```
 
-This results in a module directory path called `Modules/CustomModuleName`
+This will result in a module directory path called `Modules/CustomModuleName`
 
 #### `extra.include-module-namespace`
 
-To include the package vendor name in the module's directory path, set the `include-module-namespace` to `true` (defaults to `false`). 
+To include the package vendor name in the module's directory path, set the `include-module-namespace` to `true` (defaults to `false`).
 
 ```json
 {
@@ -85,7 +68,22 @@ To include the package vendor name in the module's directory path, set the `incl
 }
 ```
 
-Given `vendor/some-module` results in a module directory path called `Modules/Vendor/Some`
+Given `vendor/some-module` will result in a module directory path called `Modules/Vendor/Some`
+
+#### `extra.include-module-part`
+
+If package ends with a `-module`, this will be removed by default. If the `-module` should be part of module directory path, 
+set `include-module-part` to `true` to incorporate it into its path.
+
+```json
+{
+  "extra": {
+    "include-module-part": true
+  }
+}
+```
+
+Given `vendor/some-module` results in a module directory path called `Modules/SomeModule`
 
 ## Notes
 * When working on a module that is version controlled within an app that is also version controlled, you have to commit and push from inside the Module directory and then `composer update` within the app itself to ensure that the latest version of your module (dependant upon constraint) is specified in your composer.lock file.
