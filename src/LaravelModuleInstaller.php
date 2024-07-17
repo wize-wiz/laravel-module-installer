@@ -75,6 +75,12 @@ class LaravelModuleInstaller extends LibraryInstaller
             throw LaravelModuleInstallerException::fromInvalidPackage($name);
         }
 
+        if ($extra['module-namespace-dir'] ?? false) {
+            $splitPackageNameToUse = explode("-", $split[0]);
+            return implode('', array_map('ucfirst', $splitPackageNameToUse)) . '/' .
+                implode('', array_map('ucfirst', $splitNameToUse));
+        }
+
         return implode('', array_map('ucfirst', $splitNameToUse));
     }
 
