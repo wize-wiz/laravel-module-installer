@@ -10,6 +10,11 @@ class LaravelModuleInstaller extends LibraryInstaller
 {
     const DEFAULT_ROOT = "Modules";
 
+    const OPTION_MODULE_DIR = 'module-dir';
+    const OPTION_MODULE_NAME = 'module-name';
+    const OPTION_INCLUDE_MODULE_NAMESPACE = 'include-module-namespace';
+    const OPTION_INCLUDE_MODULE_PART = 'include-module-part';
+
     /**
      * {@inheritDoc}
      */
@@ -30,9 +35,9 @@ class LaravelModuleInstaller extends LibraryInstaller
             return self::DEFAULT_ROOT;
         }
 
-        $extra = $this->composer->getPackage()->getExtra();
+        $extra = $this->composer->getExtra();
 
-        if ($dir = ($extra['module-dir'] ?? false)) {
+        if ($dir = ($extra[static::OPTION_MODULE_DIR] ?? false)) {
             return $dir;
         }
 
@@ -50,38 +55,39 @@ class LaravelModuleInstaller extends LibraryInstaller
      */
     protected function getModuleName(PackageInterface $package)
     {
+        $return = [];
         $extra = $package->getExtra();
-        if ($dir = ($extra['module-dir-name'] ?? false)) {
-            return $dir;
-        }
-        if ($extra && isset($extra['module-name'])) {
-            return ucfirst($extra['module-name']);
-        }
+        $module_name = $extra[static::OPTION_MODULE_NAME] ?? false;
+        $pretty_name = $package->getPrettyName();
 
-        $name = $package->getPrettyName();
-        $split = explode("/", $name);
+        @list($vendor, $name) = explode("/", $pretty_name);
 
-        if (count($split) !== 2) {
-            throw LaravelModuleInstallerException::fromInvalidPackage($name);
+        // if custom name was given
+        if(is_string($module_name)) {
+            $name = $module_name;
         }
 
-        $splitNameToUse = explode("-", $split[1]);
-
-        if (count($splitNameToUse) < 2) {
-            throw LaravelModuleInstallerException::fromInvalidPackage($name);
+        if($extra[static::OPTION_INCLUDE_MODULE_NAMESPACE] ?? false) {
+            $return[] = $this->nameToKebab($vendor, false);
         }
 
-        if (array_pop($splitNameToUse) !== 'module') {
-            throw LaravelModuleInstallerException::fromInvalidPackage($name);
+        // backwards compatibility to strip names of `-module` ending
+        $return[] = $this->nameToKebab($name, !($extra[static::OPTION_INCLUDE_MODULE_PART] ?? false));
+
+        return implode('/', $return);
+    }
+
+    private function nameToKebab(string $value, bool $exclude_module = true) {
+        if(! str_contains($value, '-')) {
+            return ucfirst($value);
         }
 
-        if ($extra['module-namespace-dir'] ?? false) {
-            $splitPackageNameToUse = explode("-", $split[0]);
-            return implode('', array_map('ucfirst', $splitPackageNameToUse)) . '/' .
-                implode('', array_map('ucfirst', $splitNameToUse));
+        $split = explode('-', $value);
+        if($exclude_module && end($split) === 'module') {
+            array_pop($split);
         }
 
-        return implode('', array_map('ucfirst', $splitNameToUse));
+        return implode('', array_map('ucfirst', $split));
     }
 
     /**

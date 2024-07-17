@@ -3,10 +3,12 @@
 use PHPUnit\Framework\TestCase;
 
 use Composer\Composer;
+use Composer\Config;
 use Composer\IO\IOInterface;
 use Composer\Package\PackageInterface;
 use Joshbrw\LaravelModuleInstaller\Exceptions\LaravelModuleInstallerException;
 use Joshbrw\LaravelModuleInstaller\LaravelModuleInstaller;
+use PHPUnit\Framework\Attributes\Test;
 
 class LaravelModuleInstallerTest extends TestCase
 {
@@ -15,18 +17,22 @@ class LaravelModuleInstallerTest extends TestCase
     protected $config;
     protected $test;
 
-    /**
-     * {@inheritDoc}
-     */
     public function setUp(): void
     {
         $this->io = Mockery::mock(IOInterface::class);
         $this->composer = Mockery::mock(Composer::class);
+        $this->config = Mockery::mock(Config::class, [
+            'get' => './vendor'
+        ]);
+        $getPackage = Mockery::mock('alias:Composer\Package\RootPackageInterface')
+            ->shouldReceive('getExtra')
+            ->andReturn([])
+            ->getMock();
+
         $this->composer->allows([
-            'getPackage' => $this->composer,
-            'getDownloadManager' => $this->composer,
-            'getConfig' => $this->composer,
-            'get' => $this->composer,
+            'getPackage' => $getPackage,
+            'getDownloadManager' => Mockery::mock('alias:Composer\Downloader\DownloadManager'),
+            'getConfig' => $this->config
         ])->shouldReceive('getExtra')->byDefault();
 
         $this->test = new LaravelModuleInstaller(
@@ -34,23 +40,14 @@ class LaravelModuleInstallerTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     *
-     * Your package composer.json file must include:
-     *
-     *    "type": "laravel-module",
-     */
+    #[Test]
     public function it_supports_laravel_module_type_only(): void
     {
         $this->assertFalse($this->test->supports('module'));
         $this->assertTrue($this->test->supports('laravel-module'));
     }
 
-    /**
-     * @test
-     * @expectedException \Exception
-     */
+    // @todo: will this ever happen? `vendor/package-name` is the default standard for composer, I don't see how this scenario can occur
     public function it_throws_exception_if_given_malformed_name(): void
     {
         $mock = $this->getMockPackage('vendor');
@@ -60,10 +57,7 @@ class LaravelModuleInstallerTest extends TestCase
         $this->test->getInstallPath($mock);        
     }
 
-    /**
-     * @test
-     * @expectedException \Exception
-     */
+    // @todo: this has changed but is still supported, does not throw an exception
     public function it_throws_exception_if_suffix_not_included(): void
     {
         $mock = $this->getMockPackage('vendor/name');
@@ -73,9 +67,7 @@ class LaravelModuleInstallerTest extends TestCase
         $this->test->getInstallPath($mock);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_returns_modules_folder_by_default(): void
     {
         $mock = $this->getMockPackage('vendor/name-module');
@@ -83,10 +75,7 @@ class LaravelModuleInstallerTest extends TestCase
         $this->assertEquals('Modules/Name', $this->test->getInstallPath($mock));
     }
 
-    /**
-     * @test
-     * @expectedException \Exception
-     */
+    // @todo: it can take any name it wants
     public function it_throws_exception_if_given_malformed_compound_name(): void
     {
         $mock = $this->getMockPackage('vendor/some-compound-name');
@@ -96,9 +85,7 @@ class LaravelModuleInstallerTest extends TestCase
         $this->test->getInstallPath($mock);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_can_use_compound_module_names(): void
     {
         $mock = $this->getMockPackage('vendor/compound-name-module');
@@ -106,9 +93,17 @@ class LaravelModuleInstallerTest extends TestCase
         $this->assertEquals('Modules/CompoundName', $this->test->getInstallPath($mock));
     }
 
+    #[Test]
+    public function it_can_keep_module_name_in_path(): void
+    {
+        $mock = $this->getMockPackage('vendor/compound-name-module', [
+            LaravelModuleInstaller::OPTION_INCLUDE_MODULE_PART => true
+        ]);
+
+        $this->assertEquals('Modules/CompoundNameModule', $this->test->getInstallPath($mock));
+    }
+
     /**
-     * @test
-     *
      * You can optionally include a base path name
      * in which to install.
      *
@@ -116,20 +111,32 @@ class LaravelModuleInstallerTest extends TestCase
      *      "module-dir": "Custom"
      *    },
      */
+    #[Test]
     public function it_can_use_custom_path(): void
     {
         $package = $this->getMockPackage('vendor/name-module');
 
         $this->composer->shouldReceive('getExtra')
-            ->andReturn(['module-dir' => 'Custom'])
+            ->andReturn([LaravelModuleInstaller::OPTION_MODULE_DIR => 'Custom'])
             ->getMock();
 
         $this->assertEquals('Custom/Name', $this->test->getInstallPath($package));
     }
 
+    #[Test]
+    public function it_can_use_custom_path_with_custom_module_name(): void {
+        $package = $this->getMockPackage('vendor/name-module', [
+            LaravelModuleInstaller::OPTION_MODULE_NAME => 'change-name'
+        ]);
+
+        $this->setComposerExtra([
+            LaravelModuleInstaller::OPTION_MODULE_DIR => 'Custom'
+        ]);
+
+        $this->assertEquals('Custom/ChangeName', $this->test->getInstallPath($package));
+    }
+
     /**
-     * @test
-     *
      * You can optionally include a vendor path name
      * in the extra data in your composer.json file inside the module:
      *  "extra": {
@@ -138,24 +145,61 @@ class LaravelModuleInstallerTest extends TestCase
      * If it is false or does not exist, the default mode will be used.
      *
      */
+    #[Test]
     public function it_can_use_vendor_namespace_path(): void
     {
-        $package = $this->getMockPackage('vendor/name-module');
-
-        $package->shouldReceive('getExtra')
-            ->andReturn(['module-namespace-dir' => true])
-            ->getMock();
+        $package = $this->getMockPackage('vendor/name-module', [
+            LaravelModuleInstaller::OPTION_INCLUDE_MODULE_NAMESPACE => true
+        ]);
 
         $this->assertEquals('Modules/Vendor/Name', $this->test->getInstallPath($package));
     }
 
-    private function getMockPackage($return)
+    #[Test]
+    public function it_can_use_vendor_namespace_with_custom_path(): void
     {
-        return Mockery::mock(PackageInterface::class)
+        $package = $this->getMockPackage('vendor/name-module', [
+            LaravelModuleInstaller::OPTION_INCLUDE_MODULE_NAMESPACE => true
+        ]);
+
+        $this->setComposerExtra([
+            'module-dir' => 'Custom'
+        ]);
+
+        $this->assertEquals('Custom/Vendor/Name', $this->test->getInstallPath($package));
+    }
+
+    #[Test]
+    public function it_can_use_vendor_namespace_custom_path_custom_module_name(): void
+    {
+        $package = $this->getMockPackage('vendor/name-module', [
+            LaravelModuleInstaller::OPTION_INCLUDE_MODULE_NAMESPACE => true,
+            LaravelModuleInstaller::OPTION_MODULE_NAME => 'custom-name'
+        ]);
+
+        $this->setComposerExtra([
+            'module-dir' => 'Custom'
+        ]);
+
+        $this->assertEquals('Custom/Vendor/CustomName', $this->test->getInstallPath($package));
+    }
+
+    private function getMockPackage($name, array $extra = [])
+    {
+        $package = Mockery::mock(PackageInterface::class)
             ->shouldReceive('getPrettyName')
             ->once()
-            ->andReturn($return)
+            ->andReturn($name)
+            ->getMock();
+
+        return $package->shouldReceive('getExtra')
+            ->andReturn($extra)
             ->getMock();
     }
 
+    private function setComposerExtra(array $extra) {
+        $this->composer->shouldReceive('getExtra')
+            ->andReturn($extra)
+            ->getMock();
+    }
 }
