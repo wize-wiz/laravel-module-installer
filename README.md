@@ -17,13 +17,12 @@ The purpose of this package is to allow for easy installation of standalone Modu
 
 All options go into `extra` of the application `composer.json`
 
-| option       | type   | default   |                                                     |
-|--------------|--------|-----------|-----------------------------------------------------|
-| `module-dir` | string | `Modules` | Sets the directory name where modules are installed |
+| option         | type   | default   |                                                                                 |
+|----------------|--------|-----------|---------------------------------------------------------------------------------|
+| `module-dir`   | string | `Modules` | Sets the directory name where modules are installed, defaults to `Modules`      |
+| `use-symlinks` | bool   | false     | Use symlinks instead of moving module directories from `vendor` to `module-dir` |
 
 #### `extra.module-dir`
-
-To change the default `Modules` directory where the modules are installed, set the `module-dir` in `extra` of the applications `composer.json`.
 
 ```json
 {
@@ -32,6 +31,21 @@ To change the default `Modules` directory where the modules are installed, set t
   }
 }
 ```
+
+To change the default `Modules` directory where the modules are installed, set the `module-dir` in `extra` of the applications `composer.json`.
+
+#### `extra.use-symlinks`
+
+```json
+{
+  "extra": {
+    "use-symlinks": true
+  }
+}
+```
+
+If set to `true`, any Laravel module installed will be links to the `Modules` directory instead of being moved from the `vendor` directory
+to the `Modules` directory, e.g. `./Modules/SomePackage => ./vendor/some-name/some-package-module`.
 
 ### Package `composer.json` 
 
