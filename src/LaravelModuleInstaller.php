@@ -35,7 +35,7 @@ class LaravelModuleInstaller extends LibraryInstaller
             return self::DEFAULT_ROOT;
         }
 
-        $extra = $this->composer->getExtra();
+        $extra = $this->composer->getPackage()->getExtra();
 
         if ($dir = ($extra[static::OPTION_MODULE_DIR] ?? false)) {
             return $dir;
@@ -62,9 +62,18 @@ class LaravelModuleInstaller extends LibraryInstaller
 
         @list($vendor, $name) = explode("/", $pretty_name);
 
+        if(! $name) {
+            throw LaravelModuleInstallerException::fromInvalidPackage($pretty_name);
+        }
+
         // if custom name was given
         if(is_string($module_name)) {
             $name = $module_name;
+        }
+        else {
+            if(! str_ends_with($pretty_name, '-module')) {
+                throw LaravelModuleInstallerException::fromInvalidPackage($pretty_name);
+            }
         }
 
         if($extra[static::OPTION_INCLUDE_MODULE_NAMESPACE] ?? false) {
@@ -97,4 +106,5 @@ class LaravelModuleInstaller extends LibraryInstaller
     {
         return 'laravel-module' === $packageType;
     }
+
 }
